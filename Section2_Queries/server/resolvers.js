@@ -18,8 +18,11 @@ const Job = {
 };
 
 const Mutation = {
-    createJob: (root, {input}) => {
-        console.log('input', input);
+    createJob: (root, {input}, {user}) => {
+        // check user auth
+        if (!user) {
+            throw new Error('Unauthorized');
+        }
         const id = db.jobs.create(input);
         return db.jobs.get(id);
     }
