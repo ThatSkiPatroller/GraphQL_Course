@@ -18,9 +18,22 @@ const Job = {
 };
 
 const Mutation = {
-    createJob: (root, {companyId, title, description}) => {
-        return db.jobs.create({companyId, title, description})
+    createJob: (root, {input}) => {
+        console.log('input', input);
+        const id = db.jobs.create(input);
+        return db.jobs.get(id);
     }
 };
+
+// mutation CreateJob() {
+//     job: createJob(input) {
+//         id
+//         title 
+//         company {
+//             id
+//             name
+//         }
+//     }
+// }
 
 module.exports = { Query, Job, Company, Mutation };
