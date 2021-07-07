@@ -1,31 +1,28 @@
 import { getAccessToken, isLoggedIn } from './auth';
 import gql from 'graphql-tag';
-import { ApolloClient, HttpLink, InMemoryCache } from 'apollo-boost';
+import { ApolloClient, HttpLink, InMemoryCache, ApolloLink } from 'apollo-boost';
 
 const endpointURL = 'http://localhost:9000/graphql';
 
+const authLink = new ApolloLink((operation, forward) => {
+    if (isLoggedIn()) {
+        // request.headers['authorization'] = 'Bearer ' + getAccessToken();
+        operation.setContext({
+            headers: {
+                'authorization': 'Bearer ' + getAccessToken()
+            }
+        })
+    }
+    return forward(operation);
+})
+
 const client = new ApolloClient({
-    link: new HttpLink({uri: endpointURL}),
+    link: ApolloLink.from([
+        authLink,
+        new HttpLink({uri: endpointURL})
+    ]),
     cache: new InMemoryCache()
 });
-
-export async function graphqlRequest(query, variables={}) {
-    const request = {
-        method: 'POST',
-        headers: {'content-type': 'application/json'},
-        body: JSON.stringify({query, variables})
-    };
-    if (isLoggedIn()) {
-        request.headers['authorization'] = 'Bearer ' + getAccessToken();
-    }
-    const response = await fetch(endpointURL, request);
-    const responseBody = await response.json();
-    if (responseBody.errors) {
-        const message = responseBody.errors.map((error) => error.message).join('\n');
-        throw new Error(message);
-    }
-    return responseBody.data;
-}
 
 export async function loadCompany(id) {
     const query = gql`query CompanyQuery($id: ID!) {
